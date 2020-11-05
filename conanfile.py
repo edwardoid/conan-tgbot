@@ -4,7 +4,7 @@ from conans import tools
 
 class TgbotConan(ConanFile):
     name = "tgbot"
-    version = "b35438d"
+    version = "3eefae3"
 
     home = "http://reo7sp.github.io/tgbot-cpp"
     license = "MIT License"
@@ -13,9 +13,9 @@ class TgbotConan(ConanFile):
     url = "https://github.com/jgsogo/conan-tgbot"
 
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False]}
-    default_options = {"shared": False}
-    generators = "cmake"
+    options = {"shared": [True, False], "use_curl" : [True, False]}
+    default_options = {"shared": False, "use_curl" : False}
+    generators = ["cmake", "cmake_find_package"]
 
     @property
     def _source_subfolder(self):
@@ -23,11 +23,16 @@ class TgbotConan(ConanFile):
 
     def requirements(self):
         self.requires("OpenSSL/1.1.1@conan/stable")
-        self.requires("boost/1.68.0@conan/stable")
-        self.requires("libcurl/7.61.1@bincrafters/stable")
+        self.requires("boost_system/1.66.0@bincrafters/stable")
+        self.requires("boost_asio/1.66.0@bincrafters/stable")
+        self.requires("boost_lexical_cast/1.66.0@bincrafters/stable")
+        self.requires("boost_property_tree/1.66.0@bincrafters/stable")
+        self.requires("cmake_findboost_modular/1.66.0@bincrafters/stable")
+        if bool(self.options.use_curl):
+            self.requires("libcurl/7.61.1@bincrafters/stable")
 
     def source(self):
-        self.run("git clone https://github.com/reo7sp/tgbot-cpp.git {}".format(self._source_subfolder))
+        self.run("git clone https://github.com/edwardoid/tgbot-cpp.git {}".format(self._source_subfolder))
         self.run("cd {} && git checkout {}".format(self._source_subfolder, self.version))
 
         tools.replace_in_file("{}/CMakeLists.txt".format(self._source_subfolder),
@@ -39,6 +44,7 @@ conan_basic_setup()''')
     def _configure_cmake(self):
         cmake = CMake(self)
         cmake.definitions['BUILD_SHARED_LIBS'] = "ON" if bool(self.options.shared) else "OFF"
+        cmake.definitions['USE_CURL'] = "ON" if bool(self.options.use_curl) else "OFF"
         cmake.configure(source_folder=self._source_subfolder)
         return cmake
 
